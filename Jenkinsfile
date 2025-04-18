@@ -2,22 +2,23 @@ pipeline {
     agent any
 
     environment {
-        VENV_DIR = "/home/ubuntu/iot_project/venv"
-        PROJECT_DIR = "/home/ubuntu/iot_project"
+        PROJECT_DIR = 'iot_backend'
+        VENV_DIR = 'venv'
     }
 
     stages {
         stage('Pull Code') {
             steps {
-                git 'https://github.com/PranavKamlaskar/roboticsdevops.git'  
+                git branch: 'main', url: 'https://github.com/PranavKamlaskar/roboticsdevops.git'
             }
         }
 
         stage('Install Requirements') {
             steps {
                 sh '''
+                    python3 -m venv $VENV_DIR
                     source $VENV_DIR/bin/activate
-                    pip install -r requirements.txt
+                    pip install -r $PROJECT_DIR/requirements.txt
                 '''
             }
         }
@@ -26,16 +27,15 @@ pipeline {
             steps {
                 sh '''
                     source $VENV_DIR/bin/activate
-                    cd $PROJECT_DIR
-                    python manage.py migrate
-                    python manage.py collectstatic --noinput
+                    python3 manage.py migrate --settings=iot_backend.settings
+                    python3 manage.py collectstatic --noinput --settings=iot_backend.settings
                 '''
             }
         }
 
         stage('Restart Gunicorn') {
             steps {
-                sh 'sudo systemctl restart gunicorn.socket'
+                sh 'sudo systemctl restart gunicorn'
             }
         }
     }
